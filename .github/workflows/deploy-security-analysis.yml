@@ -244,6 +244,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -255,12 +268,25 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Generate test secrets
+        id: secrets
+        run: |
+          # Generate a random SECRET_KEY (32 bytes hex)
+          SECRET_KEY=$(openssl rand -hex 32)
+          echo "SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
+
+          # Generate ENCRYPTION_MASTER_KEY (32 bytes base64)
+          ENCRYPTION_KEY=$(openssl rand -base64 32 | tr -d '\n')
+          echo "ENCRYPTION_MASTER_KEY=$ENCRYPTION_KEY" >> $GITHUB_ENV
+
       - name: Start application in Docker
         run: |
           docker run -d \
             --name secure-notes-test \
             --publish 8000:8000 \
             --env FLASK_ENV=production \
+            --env SECRET_KEY="${{ env.SECRET_KEY }}" \
+            --env ENCRYPTION_MASTER_KEY="${{ env.ENCRYPTION_MASTER_KEY }}" \
             ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
 
       - name: Wait for application
