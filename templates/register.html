@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Secure Notes{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-box">
+    <h1>Create Account</h1>
+    <p class="auth-subtitle">Join us and start taking secure notes!</p>
+
+    <!-- Registration form with CSRF protection -->
+    <form method="POST" action="{{ url_for('main.register') }}" class="auth-form">
+      <!-- CSRF Token - prevents Cross-Site Request Forgery -->
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control", placeholder="Choose a username", autocomplete="username") }}
+        <small class="form-hint">3-30 characters, letters, numbers, and underscores only</small>
+        {% if form.username.errors %}
+        <div class="form-errors">
+          {% for error in form.username.errors %}
+          <span class="error-text">{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control", placeholder="your@email.com", autocomplete="email") }}
+        {% if form.email.errors %}
+        <div class="form-errors">
+          {% for error in form.email.errors %}
+          <span class="error-text">{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control", placeholder="Create a strong password", autocomplete="new-password") }}
+        <small class="form-hint">Min 8 chars, must include uppercase, lowercase, number, and special char</small>
+        {% if form.password.errors %}
+        <div class="form-errors">
+          {% for error in form.password.errors %}
+          <span class="error-text">{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.confirm_password.label(class="form-label") }}
+        {{ form.confirm_password(class="form-control", placeholder="Confirm your password", autocomplete="new-password")
+        }}
+        {% if form.confirm_password.errors %}
+        <div class="form-errors">
+          {% for error in form.confirm_password.errors %}
+          <span class="error-text">{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.submit(class="btn btn-primary btn-block") }}
+      </div>
+    </form>
+
+    <div class="auth-footer">
+      <p>Already have an account? <a href="{{ url_for('main.login') }}">Login here</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

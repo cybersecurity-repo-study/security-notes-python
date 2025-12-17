@@ -1,0 +1,316 @@
+name: Deploy with Security Analysis
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  DOCKER_IMAGE_NAME: secure-notes
+  DOCKER_IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  security-sast:
+    name: SAST Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install semgrep bandit safety
+
+      - name: Run Semgrep SAST
+        continue-on-error: true
+        run: |
+          semgrep --config p/python \
+            --json --output semgrep-report.json \
+            --severity WARNING --severity ERROR \
+            app/ scripts/ tests/ || true
+        id: semgrep
+
+      - name: Upload Semgrep results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.json
+          retention-days: 30
+
+      - name: Run Bandit SAST
+        continue-on-error: true
+        run: |
+          bandit -r app/ scripts/ -f json -o bandit-report.json || true
+        id: bandit
+
+      - name: Upload Bandit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+
+      - name: Check Semgrep findings
+        run: |
+          if [ -f semgrep-report.json ]; then
+            FINDINGS=$(jq '.results | length' semgrep-report.json 2>/dev/null || echo "0")
+            if [ "$FINDINGS" -gt 0 ]; then
+              echo "⚠️ Semgrep found $FINDINGS security issues"
+              jq -r '.results[] | "\(.check_id): \(.message) in \(.path):\(.start.line)"' semgrep-report.json
+              exit 1
+            else
+              echo "✅ Semgrep: No blocking security issues found"
+            fi
+          else
+            echo "⚠️ Semgrep report not found"
+          fi
+
+      - name: Check Bandit findings
+        run: |
+          if [ -f bandit-report.json ]; then
+            HIGH_SEVERITY=$(jq '[.results[] | select(.issue_severity == "HIGH" or .issue_severity == "MEDIUM")] | length' bandit-report.json 2>/dev/null || echo "0")
+            if [ "$HIGH_SEVERITY" -gt 0 ]; then
+              echo "⚠️ Bandit found $HIGH_SEVERITY high/medium severity issues"
+              jq -r '.results[] | select(.issue_severity == "HIGH" or .issue_severity == "MEDIUM") | "\(.issue_severity): \(.issue_text) in \(.filename):\(.line_number)"' bandit-report.json
+              exit 1
+            else
+              echo "✅ Bandit: No high/medium severity issues found"
+            fi
+          else
+            echo "⚠️ Bandit report not found"
+          fi
+
+  security-dependencies:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install safety pip-audit
+
+      - name: Run Safety check
+        continue-on-error: true
+        run: |
+          safety check --json --output safety-report.json || true
+        id: safety
+
+      - name: Run pip-audit
+        continue-on-error: true
+        run: |
+          pip-audit --format json --output pip-audit-report.json || true
+        id: pip-audit
+
+      - name: Upload Safety results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report
+          path: safety-report.json
+          retention-days: 30
+
+      - name: Upload pip-audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.json
+          retention-days: 30
+
+      - name: Check dependency vulnerabilities
+        run: |
+          if [ -f safety-report.json ]; then
+            VULNS=$(jq 'length' safety-report.json 2>/dev/null || echo "0")
+            if [ "$VULNS" -gt 0 ]; then
+              echo "⚠️ Safety found $VULNS vulnerable dependencies"
+              cat safety-report.json
+              exit 1
+            else
+              echo "✅ Safety: No vulnerable dependencies found"
+            fi
+          else
+            echo "⚠️ Safety report not found"
+          fi
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=html
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+          retention-days: 30
+
+  build-and-scan:
+    name: Build Docker & Container Scan
+    runs-on: ubuntu-latest
+    needs: [security-sast, security-dependencies, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload Trivy results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-scan-results
+          path: trivy-results.sarif
+          retention-days: 30
+
+      - name: Trivy scan summary
+        continue-on-error: true
+        run: |
+          trivy image --format table --exit-code 0 \
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+
+  simulate-deploy:
+    name: Simulate Deployment
+    runs-on: ubuntu-latest
+    needs: [build-and-scan]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start application in Docker
+        run: |
+          docker run -d \
+            --name secure-notes-test \
+            --publish 8000:8000 \
+            --env FLASK_ENV=production \
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+
+      - name: Wait for application
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8000/; do sleep 2; done'
+
+      - name: Health check
+        run: |
+          curl -f http://localhost:8000/ || exit 1
+          echo "✅ Application is healthy"
+
+      - name: Run security fuzzer (DAST)
+        continue-on-error: true
+        run: |
+          pip install requests
+          mkdir -p reports
+          python scripts/fuzzer.py \
+            --url http://localhost:8000 \
+            --output reports/security_report.txt || true
+
+      - name: Upload fuzzer results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzzer-report
+          path: reports/security_report.txt
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop secure-notes-test || true
+          docker rm secure-notes-test || true
+
+  security-summary:
+    name: Security Analysis Summary
+    runs-on: ubuntu-latest
+    needs:
+      [security-sast, security-dependencies, build-and-scan, simulate-deploy]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate summary
+        run: |
+          echo "# Security Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Security checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **SAST**: Semgrep and Bandit scans" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dependency Scan**: Safety and pip-audit" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Scan**: Trivy vulnerability scan" >> $GITHUB_STEP_SUMMARY
+          echo "- **DAST**: Security fuzzer tests" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment**: Docker build and health check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check artifacts for detailed reports." >> $GITHUB_STEP_SUMMARY

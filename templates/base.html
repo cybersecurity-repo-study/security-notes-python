@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Security: Prevent MIME sniffing -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+
+  <title>{% block title %}Secure Notes{% endblock %}</title>
+
+  <!-- Link to our stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+  <!-- Navigation bar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <a href="{{ url_for('main.index') }}">Secure Notes</a>
+    </div>
+    <div class="nav-links">
+      {% if current_user.is_authenticated %}
+      <span class="nav-user">Hello, {{ current_user.username }}</span>
+      <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('main.create_note') }}">New Note</a>
+      <a href="{{ url_for('main.logout') }}" class="btn-logout">Logout</a>
+      {% else %}
+      <a href="{{ url_for('main.login') }}">Login</a>
+      <a href="{{ url_for('main.register') }}">Register</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Flash messages - for displaying success/error messages -->
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        {# Auto-escaped by Jinja2 to prevent XSS #}
+        {{ message }}
+        <button type="button" class="close-btn" onclick="this.parentElement.remove()">×</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main content area -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2025 Secure Notes App - CCT College Dublin</p>
+    <p class="security-note">Protected with ❤️ and secure coding practices</p>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

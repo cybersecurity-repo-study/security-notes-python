@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} - Secure Notes{% endblock %}
+
+{% block content %}
+<div class="note-detail">
+  <div class="note-detail-header">
+    <a href="{{ url_for('main.dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+    <div class="note-actions">
+      <a href="{{ url_for('main.edit_note', note_id=note.id) }}" class="btn btn-secondary">
+        Edit Note
+      </a>
+
+      <!-- Delete form with CSRF protection -->
+      <!-- Using POST method and CSRF token prevents CSRF attacks on delete -->
+      <form method="POST" action="{{ url_for('main.delete_note', note_id=note.id) }}" class="delete-form"
+        onsubmit="return confirm('Are you sure you want to delete this note? This cannot be undone.');">
+        {{ delete_form.hidden_tag() }}
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <article class="note-content-wrapper">
+    <header class="note-header">
+      <!-- Title is auto-escaped by Jinja2 -->
+      <h1>{{ note.title }}</h1>
+      <div class="note-meta">
+        <span>Created: {{ note.created_at.strftime('%d %B %Y at %H:%M') }}</span>
+        {% if note.updated_at != note.created_at %}
+        <span>• Last updated: {{ note.updated_at.strftime('%d %B %Y at %H:%M') }}</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="note-body">
+      <!-- 
+                Content is displayed here. Security considerations:
+                1. Content was sanitized on input (see routes.py)
+                2. Jinja2 auto-escapes by default
+                3. We use |safe only if we intentionally allow some HTML
+                
+                Since we sanitize with bleach allowing only basic tags,
+                we can use |safe here. If you want NO HTML at all,
+                remove the |safe filter.
+            -->
+      <div class="note-text">
+        {% if note._decrypted_content %}
+        {{ note._decrypted_content|safe }}
+        {% else %}
+        {{ note.content|safe }}
+        {% endif %}
+      </div>
+    </div>
+  </article>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+# Secure Notes Application Dependencies
+# ======================================
+# Generated for CCT College Dublin - Secure Programming & Scripting CA2
+#
+# Install with: pip install -r requirements.txt
+
+# Core Flask Framework
+Flask>=3.0.0
+Werkzeug>=3.0.0
+
+# Database ORM (prevents SQL injection via parameterized queries)
+Flask-SQLAlchemy>=3.1.0
+SQLAlchemy>=2.0.0
+
+# Authentication & Session Management
+Flask-Login>=0.6.3
+
+# CSRF Protection
+Flask-WTF>=1.2.0
+WTForms>=3.1.0
+
+# Password Hashing (bcrypt is OWASP recommended)
+bcrypt>=4.1.0
+
+# Input Sanitization (XSS prevention)
+bleach>=6.1.0
+MarkupSafe>=2.1.0
+
+# Encryption (AES-GCM for note content at rest)
+cryptography>=41.0.0
+
+# Environment Variables (secure config management)
+python-dotenv>=1.0.0
+
+# Email Validation
+email-validator>=2.1.0
+
+# Production WSGI Server
+gunicorn>=21.0.0
+
+# Security Testing Dependencies
+requests>=2.31.0  # For fuzzer script
+
+# Development/Testing
+pytest>=7.4.0
+pytest-flask>=1.3.0
+pytest-cov>=4.1.0

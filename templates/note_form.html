@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Secure Notes{% endblock %}
+
+{% block content %}
+<div class="note-form-container">
+    <div class="form-header">
+        <a href="{{ url_for('main.dashboard') }}" class="back-link">← Back to Dashboard</a>
+        <h1>{{ title }}</h1>
+    </div>
+    
+    <!-- Note form with CSRF protection -->
+    <form method="POST" class="note-form">
+        <!-- CSRF Token - essential for preventing CSRF attacks -->
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control", placeholder="Give your note a title") }}
+            {% if form.title.errors %}
+                <div class="form-errors">
+                    {% for error in form.title.errors %}
+                        <span class="error-text">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.content.label(class="form-label") }}
+            {{ form.content(class="form-control form-textarea", placeholder="Write your note here...", rows="12") }}
+            <small class="form-hint">Basic formatting allowed: bold, italic, underline</small>
+            {% if form.content.errors %}
+                <div class="form-errors">
+                    {% for error in form.content.errors %}
+                        <span class="error-text">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline">Cancel</a>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+{% endblock %}
+

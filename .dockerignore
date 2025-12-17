@@ -1,0 +1,129 @@
+# Docker build files
+Dockerfile
+.dockerignore
+docker-compose*.yml
+.docker/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Tests
+tests/
+test_*.py
+*_test.py
+conftest.py
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE and editor files
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+virtualenv/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables (sensitive)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database files (created at runtime)
+*.db
+*.sqlite
+*.sqlite3
+instance/*.db
+
+# Security reports (may contain sensitive info)
+*.report
+*.pem
+*.key
+*.crt
+*.csr
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# CI/CD (not needed in image)
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Coverage and profiling
+.coverage.*
+*.cover
+.hypothesis/
+*.prof
+
+# Flask development files
+flask_session/
+instance/.webassets-cache
+
+# Node modules (if any)
+node_modules/
+package-lock.json
+yarn.lock
+reports/

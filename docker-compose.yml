@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secure-notes-app
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env
+    volumes:
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'python -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/")'' || exit 1',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Uncomment the line below if using PostgreSQL instead of SQLite
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
+
+  # PostgreSQL database service (optional - uncomment to use instead of SQLite)
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: secure-notes-db
+  #   environment:
+  #     - POSTGRES_USER=${POSTGRES_USER:-secnotes}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=${POSTGRES_DB:-secure_notes}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-secnotes}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   ports:
+  #     - "5432:5432"
+# Named volumes for PostgreSQL (only needed if using PostgreSQL)
+# volumes:
+#   postgres_data:
