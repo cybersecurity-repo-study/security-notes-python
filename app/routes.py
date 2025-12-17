@@ -267,6 +267,9 @@ def create_note():
             note.set_encrypted_content(clean_content)
         except Exception as e:
             flash(f'Error encrypting note: {str(e)}', 'error')
+            # Sanitize form data before re-rendering to prevent XSS in form fields
+            form.title.data = sanitize_strict(form.title.data)
+            form.content.data = sanitize_input(form.content.data)
             return render_template('note_form.html', form=form, title='Create Note')
         
         try:
@@ -287,6 +290,18 @@ def create_note():
             db.session.rollback()
             flash('Error creating note. Please try again.', 'error')
             print(f"Note creation error: {e}")
+            # Sanitize form data before re-rendering to prevent XSS in form fields
+            if request.method == 'POST' and form.title.data:
+                form.title.data = sanitize_strict(form.title.data)
+            if request.method == 'POST' and form.content.data:
+                form.content.data = sanitize_input(form.content.data)
+    
+    # Sanitize form data if form was submitted but validation failed
+    if request.method == 'POST':
+        if form.title.data:
+            form.title.data = sanitize_strict(form.title.data)
+        if form.content.data:
+            form.content.data = sanitize_input(form.content.data)
     
     return render_template('note_form.html', form=form, title='Create Note')
 
@@ -376,6 +391,9 @@ def edit_note(note_id):
             note.set_encrypted_content(clean_content)
         except Exception as e:
             flash(f'Error encrypting note: {str(e)}', 'error')
+            # Sanitize form data before re-rendering to prevent XSS in form fields
+            form.title.data = sanitize_strict(form.title.data)
+            form.content.data = sanitize_input(form.content.data)
             return render_template('note_form.html', form=form, title='Edit Note', note=note)
         
         try:
@@ -395,6 +413,11 @@ def edit_note(note_id):
             db.session.rollback()
             flash('Error updating note. Please try again.', 'error')
             print(f"Note update error: {e}")
+            # Sanitize form data before re-rendering to prevent XSS in form fields
+            if form.title.data:
+                form.title.data = sanitize_strict(form.title.data)
+            if form.content.data:
+                form.content.data = sanitize_input(form.content.data)
     
     elif request.method == 'GET':
         # Pre-populate form with existing data
@@ -405,6 +428,13 @@ def edit_note(note_id):
         except Exception as e:
             flash(f'Error decrypting note: {str(e)}', 'error')
             return redirect(url_for('main.dashboard'))
+    
+    # Sanitize form data if form was submitted but validation failed
+    if request.method == 'POST':
+        if form.title.data:
+            form.title.data = sanitize_strict(form.title.data)
+        if form.content.data:
+            form.content.data = sanitize_input(form.content.data)
     
     return render_template('note_form.html', form=form, title='Edit Note', note=note)
 

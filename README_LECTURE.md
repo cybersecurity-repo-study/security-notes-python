@@ -55,33 +55,57 @@ Go to: `http://localhost:5001`
 
 ---
 
-## 2. Recommended in class: simple Docker (no pipeline)
+## 2. Recommended in class: Docker Compose (easiest option)
 
-Requires **Docker** installed and the daemon running.
+Requires **Docker** and **Docker Compose** installed and the daemon running.
 
-### 2.1. Build the image
+### 2.1. Prepare environment file (optional)
 
 ```bash
-docker build -t secure-notes:latest .
+cp .env.example .env
+# Optionally edit .env with SECRET_KEY, ENCRYPTION_MASTER_KEY, etc.
 ```
 
-### 2.2. Run a demo container
+### 2.2. Start the application
 
 ```bash
-docker run -d \
-  --name secure-notes-demo \
-  -p 8000:8000 \
-  -v "$(pwd)/instance:/app/instance" \
-  secure-notes:latest
+docker-compose up -d
 ```
 
-Then open: `http://localhost:8000`
+This will:
 
-To stop/remove:
+- Build the Docker image automatically
+- Start the container in detached mode
+- Mount volumes for `instance/`, `logs/`, and `reports/`
+- Configure health checks
+- Set up automatic restart
+
+### 2.3. Check status
 
 ```bash
-docker stop secure-notes-demo
-docker rm secure-notes-demo
+docker-compose ps
+```
+
+### 2.4. View logs
+
+```bash
+docker-compose logs -f web
+```
+
+### 2.5. Open in browser
+
+Go to: `http://localhost:8000`
+
+### 2.6. Stop the application
+
+```bash
+docker-compose down
+```
+
+To also remove volumes (database, logs, reports):
+
+```bash
+docker-compose down -v
 ```
 
 ---
@@ -94,7 +118,7 @@ Prerequisites:
 
 - `python3`
 - `semgrep`
-- `docker` (daemon running)
+- `docker` and `docker-compose` (daemon running)
 
 ### 3.1. Make the script executable
 
@@ -115,6 +139,16 @@ ENVIRONMENT=dev DOCKER_RUN=true ./scripts/deployment_pipeline.sh
 ```
 
 The container will expose `DOCKER_PORT` (default `8000`), with `instance/` mounted to `/app/instance`.
+
+**Alternative**: After building with the pipeline, you can also use docker-compose:
+
+```bash
+# Build with pipeline
+ENVIRONMENT=dev ./scripts/deployment_pipeline.sh
+
+# Then use docker-compose to run
+docker-compose up -d
+```
 
 ### 3.4. Example with push to a registry (optional)
 
@@ -165,7 +199,7 @@ The script will:
    ```bash
    python scripts/fuzzer.py --url http://localhost:5001 --output reports/security_report.txt
    ```
-4. Demonstrate **simple Docker** (Section 2).
+4. Demonstrate **Docker Compose** (Section 2) - recommended for quick setup.
 5. If there is extra time, show the **security pipeline** (Section 3) or the **hardened deployment** (Section 4).
 
 ---

@@ -589,7 +589,7 @@ class SecurityFuzzer:
         
         try:
             # Make request to HTTP version
-            response = requests.get(f"{http_url}/", timeout=5, allow_redirects=False, verify=False)
+            response = requests.get(f"{http_url}/", timeout=5, allow_redirects=False, verify=True)
             
             # Should redirect to HTTPS
             if response.status_code in [301, 302, 307, 308]:
