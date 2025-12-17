@@ -1,6 +1,6 @@
 ## Secure Notes – Quick classroom guide
 
-**Dr. Shree Krishna Acharya**
+**Dr. Shree Krishna**
 
 This guide is for quickly bringing the project up during a lecture/lab on a machine that already has the code.
 

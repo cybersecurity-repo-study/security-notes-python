@@ -1,3 +1,11 @@
+## Author
+
+College: CCT College Dublin Student  
+Name: William
+Module: Secure Programming and Scripting  
+Academic Year: 2025/2026
+
+
 # Secure Notes Application
 
 A secure web application demonstrating best practices in web application security for the **Secure Programming and Scripting** module at CCT College Dublin.
@@ -632,9 +640,3 @@ bandit -r app/ -f html -o reports/bandit_report.html
 ## License
 
 This project is created for educational purposes as part of the CCT College Dublin Cybersecurity program.
-
-## Author
-
-CCT College Dublin Student  
-Module: Secure Programming and Scripting  
-Academic Year: 2024/2025
