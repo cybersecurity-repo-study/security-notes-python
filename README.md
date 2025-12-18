@@ -6,7 +6,6 @@ Name: William
 Module: Secure Programming and Scripting  
 Academic Year: 2025/2026
 
-
 # Secure Notes Application
 
 A secure web application demonstrating best practices in web application security for the **Secure Programming and Scripting** module at CCT College Dublin.
@@ -146,7 +145,7 @@ This script removes:
 - Log files (`logs/*.log`, `*.log`)
 - Reports directory contents (`reports/*`)
 - Build artifacts (`build/`, `dist/`, `*.egg-info/`)
-- IDE cache files (`.idea/`, `.vscode/`, `.cursor/`)
+- IDE cache files (`.idea/`, `.vscode/`)
 - Temporary and OS files
 
 **Note**: Database files in `instance/` and `.env` files are **NOT** removed for safety.

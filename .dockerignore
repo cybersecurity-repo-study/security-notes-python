@@ -28,7 +28,6 @@ htmlcov/
 # IDE and editor files
 .idea/
 .vscode/
-.cursor/
 *.swp
 *.swo
 *~

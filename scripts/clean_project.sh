@@ -68,7 +68,6 @@ rm -rf .eggs/ 2>/dev/null || true
 echo "  - Removing IDE cache files..."
 rm -rf .idea/ 2>/dev/null || true
 rm -rf .vscode/ 2>/dev/null || true
-rm -rf .cursor/ 2>/dev/null || true
 rm -f *.swp 2>/dev/null || true
 rm -f *.swo 2>/dev/null || true
 rm -f *~ 2>/dev/null || true
